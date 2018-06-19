@@ -329,7 +329,7 @@ class Registry(OpenShiftCLI):
     # pylint: disable=too-many-branches,too-many-return-statements
     @staticmethod
     def run_ansible(params, check_mode):
-        '''run the oc_adm_registry module'''
+        '''run idempotent ansible code'''
 
         registry_options = {'images': {'value': params['images'], 'include': True},
                             'latest_images': {'value': params['latest_images'], 'include': True},

@@ -171,7 +171,7 @@ class ManageNode(OpenShiftCLI):
 
     @staticmethod
     def run_ansible(params, check_mode):
-        '''run the oc_adm_manage_node module'''
+        '''run the idempotent ansible code'''
         nconfig = ManageNodeConfig(params['kubeconfig'],
                                    {'node': {'value': params['node'], 'include': True},
                                     'selector': {'value': params['selector'], 'include': True},

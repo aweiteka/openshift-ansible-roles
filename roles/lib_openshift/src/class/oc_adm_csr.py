@@ -38,13 +38,11 @@ class OCcsr(OpenShiftCLI):
         results = self._get(resource='nodes')['results'][0]['items']
 
         for node in nodes:
-            nodes_list.append(dict(name=node, csrs={}, server_accepted=False, client_accepted=False, denied=False))
+            nodes_list.append(dict(name=node, csrs={}, accepted=False, denied=False))
 
-            # Nodes that we were able to retrieve via "oc get nodes" are approved so mark them approved.
             for ocnode in results:
                 if node in ocnode['metadata']['name']:
-                    nodes_list[-1]['server_accepted'] = True
-                    nodes_list[-1]['client_accepted'] = True
+                    nodes_list[-1]['accepted'] = True
 
         return nodes_list
 
@@ -87,25 +85,23 @@ class OCcsr(OpenShiftCLI):
             if node['name'] in self.get_csr_request(csr['spec']['request']):
                 node['csrs'][csr['metadata']['name']] = csr
 
-                # server: check that the username is the node and type is 'Approved'
+                # check that the username is the node and type is 'Approved'
                 if node['name'] in csr['spec']['username'] and csr['status']:
                     if csr['status']['conditions'][0]['type'] == 'Approved':
-                        node['server_accepted'] = True
-                # client: check that the username is not the node and type is 'Approved'
-                if node['name'] not in csr['spec']['username'] and csr['status']:
-                    if csr['status']['conditions'][0]['type'] == 'Approved':
-                        node['client_accepted'] = True
+                        node['accepted'] = True
                 # check type is 'Denied' and mark node as such
                 if csr['status'] and csr['status']['conditions'][0]['type'] == 'Denied':
                     node['denied'] = True
+
                 return node
+
         return None
 
     def finished(self):
         '''determine if there are more csrs to sign'''
         # if nodes is set and we have nodes then return if all nodes are 'accepted'
         if self.nodes is not None and len(self.nodes) > 0:
-            return all([(node['server_accepted'] and node['client_accepted']) or node['denied'] for node in self.nodes])
+            return all([node['accepted'] or node['denied'] for node in self.nodes])
 
         # we are approving everything or we still have nodes outstanding
         return False
@@ -129,26 +125,20 @@ class OCcsr(OpenShiftCLI):
         for csr in self.csrs:
             node = self.match_node(csr)
             # oc adm certificate <approve|deny> csr
-            # there are 3 known states: Denied, Approved, {}
+            # there are 3 known states: Denied, Aprroved, {}
             # verify something is needed by OCcsr.action_needed
             # if approve_all, then do it
             # if you passed in nodes, you must have a node that matches
             if self.approve_all or (node and OCcsr.action_needed(csr, action)):
                 result = self.openshift_cmd(['certificate', action, csr['metadata']['name']], oadm=True)
-                # if we successfully approved
-                if result['returncode'] == 0:
-                    # client should have service account name in username field
-                    # server should have node name in username field
-                    if node and csr['metadata']['name'] not in node['csrs']:
-                        node['csrs'][csr['metadata']['name']] = csr
+                # client should have service account name in username field
+                # server should have node name in username field
+                if node and csr['metadata']['name'] not in node['csrs']:
+                    node['csrs'][csr['metadata']['name']] = csr
 
-                    # mark node as accepted in our list of nodes
-                    # we will use {client,server}_accepted fields to determine if we're finished
-                    if node['name'] not in csr['spec']['username']:
-                        node['client_accepted'] = True
-
+                    # accept node in cluster
                     if node['name'] in csr['spec']['username']:
-                        node['server_accepted'] = True
+                        node['accepted'] = True
 
                 results.append(result)
 
@@ -156,7 +146,7 @@ class OCcsr(OpenShiftCLI):
 
     @staticmethod
     def run_ansible(params, check_mode=False):
-        '''run the oc_adm_csr module'''
+        '''run the idempotent ansible code'''
 
         client = OCcsr(params['nodes'],
                        params['approve_all'],
@@ -204,7 +194,7 @@ class OCcsr(OpenShiftCLI):
 
             for result in all_results:
                 if result['returncode'] != 0:
-                    return {'failed': True, 'msg': all_results, 'timeout': timeout}
+                    return {'failed': True, 'msg': all_results}
 
             return dict(changed=len(all_results) > 0,
                         results=all_results,
@@ -215,3 +205,4 @@ class OCcsr(OpenShiftCLI):
 
         return {'failed': True,
                 'msg': 'Unknown state passed. %s' % state}
+

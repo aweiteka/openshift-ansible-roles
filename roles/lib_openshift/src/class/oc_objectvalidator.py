@@ -22,7 +22,7 @@ class OCObjectValidator(OpenShiftCLI):
     # pylint: disable=too-many-return-statements
     @staticmethod
     def run_ansible(params):
-        ''' run the oc_objectvalidator module
+        ''' run the idempotent ansible code
 
             params comes from the ansible portion of this module
         '''

@@ -107,7 +107,7 @@ class OCObject(OpenShiftCLI):
     # pylint: disable=too-many-return-statements,too-many-branches
     @staticmethod
     def run_ansible(params, check_mode=False):
-        '''run the oc_obj module'''
+        '''perform the ansible idempotent code'''
 
         ocobj = OCObject(params['kind'],
                          params['namespace'],
@@ -126,8 +126,6 @@ class OCObject(OpenShiftCLI):
         # Get
         #####
         if state == 'list':
-            if api_rval['returncode'] != 0:
-                return {'changed': False, 'failed': True, 'msg': api_rval}
             return {'changed': False, 'results': api_rval, 'state': state}
 
         ########

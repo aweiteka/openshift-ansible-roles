@@ -158,7 +158,7 @@ class PolicyGroup(OpenShiftCLI):
 
     @staticmethod
     def run_ansible(params, check_mode):
-        '''run the oc_adm_policy_group module'''
+        '''run the idempotent ansible code'''
 
         state = params['state']
 

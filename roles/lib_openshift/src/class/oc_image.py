@@ -39,7 +39,7 @@ class OCImage(OpenShiftCLI):
     # pylint: disable=too-many-return-statements
     @staticmethod
     def run_ansible(params, check_mode):
-        ''' run the oc_image module'''
+        ''' run the ansible idempotent code '''
 
         ocimage = OCImage(params['namespace'],
                           params['registry_url'],

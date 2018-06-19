@@ -57,7 +57,7 @@ class Edit(OpenShiftCLI):
 
     @staticmethod
     def run_ansible(params, check_mode):
-        '''run the oc_edit module'''
+        '''run the ansible idempotent code'''
 
         ocedit = Edit(params['kind'],
                       params['namespace'],

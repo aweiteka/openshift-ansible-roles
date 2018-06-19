@@ -190,7 +190,7 @@ class YeditException(Exception):  # pragma: no cover
     pass
 
 
-# pylint: disable=too-many-public-methods,too-many-instance-attributes
+# pylint: disable=too-many-public-methods
 class Yedit(object):  # pragma: no cover
     ''' Class to modify yaml files '''
     re_valid_key = r"(((\[-?\d+\])|([0-9a-zA-Z%s/_-]+)).?)+$"
@@ -203,7 +203,6 @@ class Yedit(object):  # pragma: no cover
                  content=None,
                  content_type='yaml',
                  separator='.',
-                 backup_ext=None,
                  backup=False):
         self.content = content
         self._separator = separator
@@ -211,11 +210,6 @@ class Yedit(object):  # pragma: no cover
         self.__yaml_dict = content
         self.content_type = content_type
         self.backup = backup
-        if backup_ext is None:
-            self.backup_ext = ".{}".format(time.strftime("%Y%m%dT%H%M%S"))
-        else:
-            self.backup_ext = backup_ext
-
         self.load(content_type=self.content_type)
         if self.__yaml_dict is None:
             self.__yaml_dict = {}
@@ -410,7 +404,7 @@ class Yedit(object):  # pragma: no cover
             raise YeditException('Please specify a filename.')
 
         if self.backup and self.file_exists():
-            shutil.copy(self.filename, '{}{}'.format(self.filename, self.backup_ext))
+            shutil.copy(self.filename, '{}.{}'.format(self.filename, time.strftime("%Y%m%dT%H%M%S")))
 
         # Try to set format attributes if supported
         try:
@@ -721,7 +715,12 @@ class Yedit(object):  # pragma: no cover
 
         curr_value = invalue
         if val_type == 'yaml':
-            curr_value = yaml.safe_load(str(invalue))
+            try:
+                # AUDIT:maybe-no-member makes sense due to different yaml libraries
+                # pylint: disable=maybe-no-member
+                curr_value = yaml.safe_load(invalue, Loader=yaml.RoundTripLoader)
+            except AttributeError:
+                curr_value = yaml.safe_load(invalue)
         elif val_type == 'json':
             curr_value = json.loads(invalue)
 
@@ -791,7 +790,6 @@ class Yedit(object):  # pragma: no cover
         yamlfile = Yedit(filename=params['src'],
                          backup=params['backup'],
                          content_type=params['content_type'],
-                         backup_ext=params['backup_ext'],
                          separator=params['separator'])
 
         state = params['state']
@@ -1723,7 +1721,7 @@ class OCSecret(OpenShiftCLI):
     # pylint: disable=too-many-return-statements,too-many-branches
     # TODO: This function should be refactored into its individual parts.
     def run_ansible(params, check_mode):
-        '''run the oc_secret module'''
+        '''run the ansible idempotent code'''
 
         ocsecret = OCSecret(params['namespace'],
                             params['name'],

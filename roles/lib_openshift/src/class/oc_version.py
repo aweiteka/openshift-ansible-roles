@@ -35,7 +35,7 @@ class OCVersion(OpenShiftCLI):
 
     @staticmethod
     def run_ansible(params):
-        '''run the oc_version module'''
+        '''run the idempotent ansible code'''
         oc_version = OCVersion(params['kubeconfig'], params['debug'])
 
         if params['state'] == 'list':

@@ -69,7 +69,7 @@ class OCServiceAccountSecret(OpenShiftCLI):
     # pylint: disable=too-many-return-statements,too-many-branches
     # TODO: This function should be refactored into its individual parts.
     def run_ansible(params, check_mode):
-        ''' run the oc_serviceaccount_secret module'''
+        ''' run the ansible idempotent code '''
 
         sconfig = ServiceAccountConfig(params['service_account'],
                                        params['namespace'],
